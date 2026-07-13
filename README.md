@@ -1,8 +1,36 @@
-# 🕵️ Competity — Competitive Intelligence Bot
+# 🕵️ Competity — Competitive Intelligence Platform
 
-**Система мониторинга конкурентов** — собирает данные из 5 источников, анализирует через DeepSeek V4, доставляет structured еженедельные отчёты через Telegram.
+**Competity** is an automated competitive intelligence platform. It autonomously monitors your competitors across the web, analyzes the data using DeepSeek V4 (or any OpenAI-compatible endpoint like DigitalOcean), and delivers structured weekly reports to a beautiful Apple-inspired web dashboard and your Telegram inbox.
 
-## Архитектура
+![Dashboard Preview](docs/images/dashboard.png)
+
+## ✨ Features
+
+- **Automated Data Collection**: Silently scrapes and gathers data from 5 different sources:
+  - 🌐 **Websites** (Playwright scrapes homepage, pricing, changelog, blog)
+  - 🐙 **GitHub** (Tracks new repositories, releases, and star metrics)
+  - 🚀 **Product Hunt** (Monitors new competitor product launches)
+  - 📰 **HackerNews** (Tracks community sentiment and mentions)
+  - 💬 **Reddit** (Searches target subreddits for brand mentions)
+- **AI Analysis**: Uses **DeepSeek V4** to distill raw noise into actionable strategic insights (new launches, pricing changes, features).
+- **Beautiful Dashboard**: A fast, premium React frontend built with Vite and Tailwind, designed with Apple Human Interface guidelines.
+- **Telegram Delivery**: Weekly reports pushed directly to your team's Telegram chat.
+
+---
+
+## 📸 Screenshots
+
+### Competitors Management
+Easily add and track companies you want to monitor.
+![Competitors View](docs/images/competitors.png)
+
+### Intelligence Reports
+Browse, manage, and read AI-generated weekly executive summaries.
+![Reports View](docs/images/reports.png)
+
+---
+
+## 🏗️ Architecture
 
 ```
 📡 Sources                    ⚙️ Core (FastAPI)           📬 Delivery
@@ -11,144 +39,74 @@
 │ GitHub   │──┤    ┌─────┐   │ Service     │────────┐   │ Bot      │
 │ PH       │──┼───→│ API │──→│             │        │   └──────────┘
 │ HN       │──┤    └─────┘   │ DeepSeek V4 │        │
-│ Reddit   │──┘              │ Analyzer    │────────┼──→ 📊 Reports
+│ Reddit   │──┘              │ Analyzer    │────────┼──→ 📊 Reports (React)
                              │             │        │
                              │ APScheduler │        │   ┌──────────┐
                              └─────────────┘        └──→│PostgreSQL│
                                                         └──────────┘
 ```
 
-## Stack
-
 | Component | Technology |
 |-----------|-----------|
-| API | FastAPI + uvicorn |
+| Frontend | React + Vite + Radix UI |
+| Backend API | FastAPI + Uvicorn |
 | Database | PostgreSQL 16 + async SQLAlchemy |
-| Web Scraping | Playwright (async, headless Chromium) |
-| AI Analysis | DeepSeek V4 (OpenAI-compatible API) |
-| Scheduling | APScheduler |
-| Delivery | python-telegram-bot |
-| Orchestration | n8n (webhook-ready) |
+| AI Analysis | DeepSeek V4 (via `AsyncOpenAI`) |
 | Containerization | Docker + Docker Compose |
 
-## Quick Start
+---
+
+## 🚀 Quick Start (Docker)
 
 ### 1. Configure environment
-
 ```bash
 cp .env.example .env
-# Edit .env with your API keys
 ```
+Edit `.env` with your API keys. You can use any OpenAI-compatible provider (e.g., DigitalOcean) by setting the `DEEPSEEK_BASE_URL` and `DEEPSEEK_API_KEY`.
 
-### 2. Start with Docker Compose
-
+### 2. Start the Stack
 ```bash
 docker-compose up -d
 ```
-
-This starts:
+This boots up:
+- **Competity Frontend** on `http://localhost:5173`
+- **Competity Backend API** on `http://localhost:8000`
 - **PostgreSQL** on port `5432`
-- **Competity API** on port `8000`
-- **n8n** on port `5678`
+- **n8n** (optional workflow automation) on `http://localhost:5678`
 
-### 3. Add competitors
+### 3. Open the Dashboard
+Navigate to [http://localhost:5173](http://localhost:5173) to manage your competitors and generate reports.
 
+---
+
+## 🛠️ Local Development (without Docker)
+
+### Backend
 ```bash
-curl -X POST http://localhost:8000/api/v1/competitors \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "OpenAI",
-    "domain": "openai.com",
-    "github_org": "openai",
-    "keywords": ["openai", "chatgpt", "gpt-4"]
-  }'
-```
-
-### 4. Trigger collection
-
-```bash
-curl -X POST http://localhost:8000/api/v1/webhooks/collect
-```
-
-### 5. Generate report
-
-```bash
-curl -X POST http://localhost:8000/api/v1/reports/generate
-```
-
-## Local Development (without Docker)
-
-```bash
-# Create virtual environment
 python -m venv .venv
-.venv\Scripts\activate  # Windows
-# source .venv/bin/activate  # Linux/Mac
-
-# Install dependencies
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-
-# Install Playwright browsers
 playwright install chromium
 
-# Start PostgreSQL (must be running)
-# Configure .env with your DATABASE_URL
-
-# Run
 uvicorn app.main:app --reload
 ```
 
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `GET` | `/api/v1/competitors` | List competitors |
-| `POST` | `/api/v1/competitors` | Add competitor |
-| `PUT` | `/api/v1/competitors/{id}` | Update competitor |
-| `DELETE` | `/api/v1/competitors/{id}` | Delete competitor |
-| `GET` | `/api/v1/reports` | List reports |
-| `GET` | `/api/v1/reports/{id}` | Get report |
-| `POST` | `/api/v1/reports/generate` | Generate report |
-| `POST` | `/api/v1/webhooks/collect` | Trigger collection |
-| `POST` | `/api/v1/webhooks/report` | Trigger report |
-| `POST` | `/api/v1/webhooks/telegram` | Telegram webhook |
-
-## Telegram Bot Commands
-
-| Command | Description |
-|---------|-------------|
-| `/start` | Welcome message |
-| `/help` | Show commands |
-| `/report` | Get latest report |
-| `/collect` | Trigger data collection |
-| `/competitors` | List monitored competitors |
-
-## Data Sources
-
-- **🌐 Websites** — Playwright scrapes `/`, `/pricing`, `/changelog`, `/blog`
-- **🐙 GitHub** — REST API for repos, releases, star counts
-- **🚀 Product Hunt** — GraphQL API for new launches
-- **📰 HackerNews** — Algolia Search API for mentions
-- **💬 Reddit** — AsyncPRAW searches target subreddits
-
-## Schedule
-
-| Job | Schedule | Default |
-|-----|----------|---------|
-| Data Collection | Daily | 03:00 UTC |
-| Report Generation | Weekly | Monday 09:00 UTC |
-
-Configure via `.env`:
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
 ```
+
+---
+
+## 📅 Scheduling
+
+Data collection and report generation happen automatically in the background using APScheduler. You can configure the cron timing in your `.env` file:
+```env
 COLLECT_CRON_HOUR=3
 REPORT_CRON_DAY_OF_WEEK=mon
 REPORT_CRON_HOUR=9
 ```
 
-## n8n Integration
-
-n8n is available at `http://localhost:5678` (login: admin/competity).
-
-Use these webhook URLs in your n8n workflows:
-- `http://app:8000/api/v1/webhooks/collect` — trigger collection
-- `http://app:8000/api/v1/webhooks/report` — trigger report generation
+Enjoy monitoring your competition effortlessly! 🚀
