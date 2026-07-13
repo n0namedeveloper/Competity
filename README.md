@@ -110,3 +110,7 @@ REPORT_CRON_HOUR=9
 ```
 
 Enjoy monitoring your competition effortlessly! 🚀
+
+---
+
+*Made with ❤️ and 🤖 by Artsiom Beniash. Make the world a better place to live! <3*
