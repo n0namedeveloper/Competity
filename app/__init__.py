@@ -1,0 +1,1 @@
+"""Competity — Competitive Intelligence Bot."""
